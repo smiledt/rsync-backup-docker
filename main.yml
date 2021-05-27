@@ -1,0 +1,8 @@
+---
+# This playbook backs up the config directories of my docker containers.
+
+- name: Backup the docker hosts config directories.
+  hosts: docker
+  become: true
+  roles:
+    - role: rsync-backup-docker

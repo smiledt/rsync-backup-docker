@@ -1,0 +1,6 @@
+# Defaults file for RSync-Backup-Docker
+# These values are meant to be overwritten.
+
+rsync_server: rsync.domain.local
+backup_dir: /opt
+backup_storage_dir: /mnt/fileserver/backups

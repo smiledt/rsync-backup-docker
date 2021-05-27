@@ -1,0 +1,6 @@
+---
+# Main vars file for rsync-backup-docker
+
+rsync_server: rsync
+backup_dir: /opt
+backup_storage_dir: /mnt/storage/backups

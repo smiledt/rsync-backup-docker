@@ -1,0 +1,51 @@
+---
+# Tasks file for the rsync-backup-docker role
+
+# Set the creation date for use in the backup folder.
+- name: Set the backup date fact for later use.
+  set_fact: backup_date="{{ lookup('pipe','date "+%Y-%m-%d"') }}"
+
+- name: Ensure RSync is installed on the server being backed up.
+  apt:
+    name: rsync
+    state: present
+    update_cache: yes
+    cache_valid_time: 86400
+
+- name: Ensure RSync is installed on the RSync server.
+  apt:
+    name: rsync
+    state: present
+    update_cache: yes
+    cache_valid_time: 86400
+  delegate_to: "{{  rsync_server }}"
+
+- name: Get a list of all running containers.
+  docker_host_info:
+    containers: True
+  register: docker_info
+
+- name: Check to see if these containers have a directory in {{ backup_dir }}.
+  stat:
+    path: '{{ backup_dir }}/{{ item.Names[0] | regex_replace("^/", "") }}'
+  register: docker_directories
+  loop: '{{ docker_info.containers }}'
+
+- name: Create the backup directory in {{ backup_storage_dir }}.
+  file:
+    path: '{{ backup_storage_dir }}/{{ item.item.Names[0] | regex_replace("^/", "") }}/{{ backup_date }}'
+    state: directory
+    mode: '0755'
+  loop: '{{ docker_directories.results }}'
+  when: item.stat.isdir is defined # We only want to create the backup directory and initiate rsync if the directory exists on the host being backed up.
+  delegate_to: '{{ rsync_server }}'
+
+- name: Backup the container configurations in {{ backup_dir }} to {{ backup_storage_dir }} if they exist. 
+  synchronize:
+    mode: pull
+    src: '{{ backup_dir }}/{{ item.item.Names[0] | regex_replace("^/", "") }}/'
+    dest: '{{ backup_storage_dir }}/{{ item.item.Names[0] | regex_replace("^/", "") }}/{{ backup_date }}'
+    private_key: /home/ansible/.ssh/rsync_management 
+  loop: '{{ docker_directories.results }}'
+  when: item.stat.isdir is defined
+  delegate_to: '{{ rsync_server }}'
