@@ -33,14 +33,11 @@ None.
 Example Playbook
 ----------------
 
-    - name: Connect the vm to the Media share on my TrueNAS vm.
-      hosts: nfs_client_media
+    - name: Backup the docker hosts config directories.
+      hosts: docker
       become: true
-      vars:
-        nfs_mounts:
-          - { mnt_path: "/mnt/media", nfs_host: "truenas.plumbus.lab", share_path: "/mnt/Media" }
       roles:
-      - role: nfs_client
+        - role: rsync-backup-docker
 
 License
 -------
